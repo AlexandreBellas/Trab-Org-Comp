@@ -25,7 +25,7 @@
 
 #include "mask.h"		/* Useful masks; customize at you please. */
 #include "cpu.h"		/* CPU functions' headers. */
-
+#include "code.c"
 
 /* Global vars. */
 
@@ -42,42 +42,42 @@ int main (int argc, char *argv[])
   /* Auxiliary registers used for writing during a single cycle. They store the
      cycle result so that it is available for reading in at the beginning of the
      next cycle. */
-  
+
   int PCnew = 0, IRnew, MDRnew, Anew, Bnew, ALUOUTnew;
 
-  /* Special registers used for reading during a single cycle. They store 
+  /* Special registers used for reading during a single cycle. They store
      results that may be utilized during the current cycle, since they have been
      written during the previous cycle. Eg.: the ALU result is initially stored
      in ALUOUTnew; only at the end of the cycle the value is stored in ALUOUT so
      that it can be read during the next cycle. */
-  
+
   int PC = 0, IR=-1, MDR, A, B, ALUOUT;
 
 
   /* Control signals (16 signals). Each bit determines on of the control signals
      leaving the control unit. The position of each signal in the short int is
      specified at mask.h. */
-  
+
   short int sc = 0;
 
   /* ALU input control signal. Only 4 less-significant bits are used. */
-  
+
   char ula_op = 0;
 
     int nr_cycles = 0; 		/* Counts the number of executed cycles. */
 
-    /* Variables zero and overflow are return arguments and therefore don't 
+    /* Variables zero and overflow are return arguments and therefore don't
        need to be initialized. */
-    
 
-    /* Memory. */
-    memory[0] = 0x8c480000;  // 1000 1100 0100 1000 0000 0000 0000 0000  lw $t0, 0($v0) *5*
-    memory[1] = 0x010c182a;  // 0000 0001 0000 1100 0001 1000 00101010   slt $v1, $t0, $t4 *4*
-    memory[2] = 0x106d0004;  // 0001 0000 0110 1101 0000 0000 0000 0100  beq $v1, $t5, fim(4 palavras abaixo de PC+4) *3*
-    memory[3] = 0x01084020;  // 0000 0001 0000 1000 0100 0000 0010 0000  add $t0, $t0, $t0 *4*
-    memory[4] = 0xac480000;  // 1010 1100 0100 1000 0000 0000 0000 0000  sw $t0, 0($v0) *4*
-    memory[5] = 0x004b1020;  // 0000 0000 0100 1011 0001 0000 0010 0000  add $v0, $t3, $v0 *4*
-    memory[6] = 0x08000000;  // 0000 1000 0000 0000 0000 0000 0000 0000  j inicio (palavra 0) *3*
+
+    /* Memory. */            // opCode  RS    RT    RD
+    memory[0] = 0x8c480000;  // 100011 00010 01000 00000 00000 000000   lw $t0, 0($v0) *5*
+    memory[1] = 0x010c182a;  // 000000 01000 01100 00011 00000 101010   slt $v1, $t0, $t4 *4*
+    memory[2] = 0x106d0004;  // 000100 00011 01101 0000000000000100     beq $v1, $t5, fim(4 palavras abaixo de PC+4) *3*
+    memory[3] = 0x01084020;  // 000000 01000 01000 01000 00000 100000   add $t0, $t0, $t0 *4*
+    memory[4] = 0xac480000;  // 101011 00010 01000 0000 0000 0000 0000  sw $t0, 0($v0) *4*
+    memory[5] = 0x004b1020;  // 000000 00010 01011 0001 0000 0010 0000  add $v0, $t3, $v0 *4*
+    memory[6] = 0x08000000;  // 000010 00000 00000 0000 0000 0000 0000  j inicio (palavra 0) *3*
     memory[7] = 0;           // fim (criterio de parada do programa)    (27*6)+(5+4+3)+1
     memory[8] = 0;
     memory[9] = 0;
@@ -93,8 +93,8 @@ int main (int argc, char *argv[])
 
 
     /* Registers. */
-    reg[2]  = 80;  // $v0
-    reg[11] = 4;  // $t3
+    reg[2]  = 20; // $v0
+    reg[11] = 1;  // $t3
     reg[12] = 0;  // $t4
     reg[13] = 1;  // $t5
 
@@ -105,7 +105,15 @@ int main (int argc, char *argv[])
 
 	/* The following functional units shall be executed at every cycle.
 	   The control signals in sc will enable/disable the effective execution. */
-	
+        //printf("Ciclo: %d\n", nr_cycles);
+        //printf("IR corrente %d\n", IR);
+        //printf("PC corrente: %d\n", PC);
+        //printf("A: %d\n", A);
+        //printf("B: %d\n", B);
+        //printf("t0: %d e t4: %d\n", reg[8], reg[12]);
+        //printf("V0: %d\n", reg[2]);
+
+        //system("PAUSE");
         control_unit(IR, &sc);
         instruction_fetch(sc, PC, ALUOUT, IR, &PCnew, &IRnew, &MDRnew);
         decode_register(sc, IR, PC, A, B, &Anew, &Bnew, &ALUOUTnew);
@@ -126,7 +134,7 @@ int main (int argc, char *argv[])
 
 	/* End of cycle. */
 
-    } 
+    }
 
     /* Dump memory for verifying the result. */
 
@@ -137,7 +145,8 @@ int main (int argc, char *argv[])
     }
 
         printf("N. executed cycles =%d\n", nr_cycles);
+        //system("PAUSE");
     }
 
     return(EXIT_SUCCESS);
-} 
+}
